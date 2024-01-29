@@ -4,8 +4,11 @@
  * @param {number} nbMotsProposes : le nombre de mots proposés à l'utilisateur
  */
 function afficherResultat(score, nbMotsProposes) {
+    // Récupération de la zone dans laquelle on va écrire le score
     let spanScore = document.querySelector(".zoneScore span")
+    // Ecriture du texte
     let affichageScore = `${score} / ${nbMotsProposes}` 
+    // On place le texte à l'intérieur du span. 
     spanScore.innerText = affichageScore
 }
 
@@ -100,7 +103,12 @@ function gererFormulaire(scoreEmail) {
     
 }
 
+/**
+ * Cette fonction lance le jeu. 
+ * Elle demande à l'utilisateur de choisir entre "mots" et "phrases" et lance la boucle de jeu correspondante
+ */
 function lancerJeu() {
+    // Initialisations
     initAddEventListenerPopup()
     let score = 0
     let i = 0
@@ -110,9 +118,45 @@ function lancerJeu() {
     let listeBtnRadio = document.querySelectorAll(".optionSource input")
     let inputEcriture = document.getElementById("inputEcriture")
 
+    // Ajout de l'écouteur d'événements pour démarrer le chronomètre dès que l'utilisateur commence à écrire
+    inputEcriture.addEventListener("input", () => {
+        if (!chronometreInterval) {
+            demarrerChronometre();
+        }
+    });
+
+        // Gestion de l'événement "keypress" pour la validation de l'entrée avec la touche "Entrée"
+        inputEcriture.addEventListener("keypress", function(event) {
+            if (listeProposition[i] === undefined) {
+                return; // Sortir de la fonction sans rien faire si le jeu est déjà terminé
+            }
+            
+            if (event.key === "Enter") {
+                event.preventDefault();
+                if (inputEcriture.value === listeProposition[i]) {
+                    score++;
+                }
+                i++;
+                afficherResultat(score, i);
+                inputEcriture.value = '';
+                if (listeProposition[i] === undefined) {
+                    afficherProposition("Le jeu est fini");
+                    btnValiderMot.disabled = true;
+                    for (let indexBtnRadio = 0; indexBtnRadio < listeBtnRadio.length; indexBtnRadio++) {
+                        listeBtnRadio[indexBtnRadio].disabled = true;
+                    }
+                    arreterChronometre();
+                } else {
+                    afficherProposition(listeProposition[i]);
+                    inputEcriture.focus();
+                }
+            }
+        });
+        
 
     afficherProposition(listeProposition[i])
 
+    // Gestion de l'événement click sur le bouton "valider"
     btnValiderMot.addEventListener("click", () => {
         if (inputEcriture.value === listeProposition[i]) {
             score++
@@ -122,15 +166,14 @@ function lancerJeu() {
         inputEcriture.value = ''
         if (listeProposition[i] === undefined) {
             afficherProposition("Le jeu est fini")
-            // On désactive le bouton valider
             btnValiderMot.disabled = true
-            // On désactive les boutons radios
             for (let indexBtnRadio = 0; indexBtnRadio < listeBtnRadio.length; indexBtnRadio++) {
                 listeBtnRadio[indexBtnRadio].disabled = true
             }
-
+            arreterChronometre();
         } else {
             afficherProposition(listeProposition[i])
+            inputEcriture.focus();
         }
     })
 
@@ -147,6 +190,7 @@ function lancerJeu() {
         })
     }
 
+    // Gestion de l'événement submit sur le formulaire de partage. 
     let form = document.querySelector("form")
     form.addEventListener("submit", (event) => {
         event.preventDefault()
@@ -155,4 +199,32 @@ function lancerJeu() {
     })
 
     afficherResultat(score, i)
+}
+
+// Déclaration des variables pour le chronomètre
+let minutes = 0;
+let secondes = 0;
+let chronometreInterval;
+
+// Fonction pour démarrer le chronomètre
+function demarrerChronometre() {
+    chronometreInterval = setInterval(() => {
+        secondes++;
+        if (secondes === 60) {
+            minutes++;
+            secondes = 0;
+        }
+        afficherChronometre();
+    }, 1000);
+}
+
+// Fonction pour arrêter le chronomètre
+function arreterChronometre() {
+    clearInterval(chronometreInterval);
+}
+
+// Fonction pour afficher le chronomètre
+function afficherChronometre() {
+    let chronometreElement = document.getElementById("chronometre");
+    chronometreElement.textContent = `${minutes < 10 ? '0' + minutes : minutes}:${secondes < 10 ? '0' + secondes : secondes}`;
 }
